@@ -117,7 +117,7 @@ test('SQL migration and access boundaries on isolated PostgreSQL', async t => {
     await t.test('stale repeated transition rejected without duplicate event', async () => {
       await asUser(executorA); await transition(taskA,'rework','in_progress');
       const before = await scalar('select count(*)::int from public.task_history where task_id=$1',[taskA]);
-      await assert.rejects(transition(taskA,'rework','in_progress'),/уже изменён/);
+      await assert.rejects(transition(taskA,'rework','in_progress'),{code:'PT409'});
       assert.equal(await scalar('select count(*)::int from public.task_history where task_id=$1',[taskA]),before);
     });
     await t.test('history failure rolls status back in same transaction', async () => {
@@ -165,7 +165,7 @@ test('SQL migration and access boundaries on isolated PostgreSQL', async t => {
       await asUser(executorA);await transition(id,'new','in_progress');
       await asUser(manager);
       await db.query('select public.reassign_task($1,$2,$3)',[id,executorA,executorB]);
-      await assert.rejects(db.query('select public.reassign_task($1,$2,$3)',[id,executorA,executorB]),/уже изменён/);
+      await assert.rejects(db.query('select public.reassign_task($1,$2,$3)',[id,executorA,executorB]),{code:'PT409'});
       await assert.rejects(db.query('select public.reassign_task($1,$2,$3)',[id,executorB,manager]),/исполнителя/);
       await asUser(executorA);
       for(const [table,column] of [['tasks','id'],['task_history','task_id'],['objects','id']])assert.equal(await scalar(`select count(*)::int from public.${table} where ${column}=$1`,[table==='objects'?object:id]),0);

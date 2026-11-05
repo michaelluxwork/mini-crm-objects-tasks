@@ -35,6 +35,7 @@ try {
   if(!/\bt\b/.test(applied)) sql(readFileSync(new URL('../../supabase/migrations/202611050001_initial.sql',import.meta.url),'utf8'));
   if(!/\bt\b/.test(sql("select to_regprocedure('public.update_task_details(uuid,text,text,uuid)') is not null;"))) sql(readFileSync(new URL('../../supabase/migrations/202611050002_edit_task_object.sql',import.meta.url),'utf8'));
   if(!/\bt\b/.test(sql("select to_regprocedure('public.reassign_task(uuid,uuid,uuid)') is not null;"))) sql(readFileSync(new URL('../../supabase/migrations/202611050003_delete_and_reassign.sql',import.meta.url),'utf8'));
+  if(!/\bt\b/.test(sql("select strpos(pg_get_functiondef('public.transition_task(uuid,text,text,text)'::regprocedure),'PT409')>0;"))) sql(readFileSync(new URL('../../supabase/migrations/202611050004_conflict_http_status.sql',import.meta.url),'utf8'));
   sql("notify pgrst, 'reload schema';");
   const accessPath = new URL('../../.local-access.local.json',import.meta.url);
   const credentials = existsSync(accessPath) ? JSON.parse(readFileSync(accessPath,'utf8')) : {
@@ -110,6 +111,7 @@ try {
     const responses=await Promise.all([executorA.rpc('transition_task',args),executorA.rpc('transition_task',args)]);
     assert.equal(responses.filter(response=>!response.error).length,1);
     assert.equal(responses.filter(response=>response.error).length,1);
+    const conflict=responses.find(response=>response.error);assert.equal(conflict.status,409);assert.equal(conflict.error.code,'PT409');
     assert.equal(ok(await manager.from('task_history').select('*').eq('task_id',taskId)).length,2);
   });
   await check('full status flow, mandatory comment and exact history via real REST',async()=>{
@@ -157,6 +159,7 @@ try {
     const args={p_task_id:id,p_expected_assignee_id:credentials.users[1].id,p_assignee_id:credentials.users[2].id};
     const outcomes=await Promise.all([manager.rpc('reassign_task',args),manager.rpc('reassign_task',args)]);
     assert.equal(outcomes.filter(outcome=>!outcome.error).length,1);
+    const conflict=outcomes.find(outcome=>outcome.error);assert.equal(conflict.status,409);assert.equal(conflict.error.code,'PT409');
     assert.equal(ok(await executorA.from('tasks').select('*').eq('id',id)).length,0);
     assert.equal(ok(await executorA.from('task_history').select('*').eq('task_id',id)).length,0);
     assert.equal(ok(await executorA.from('objects').select('*').eq('id',moveTarget)).length,0);
