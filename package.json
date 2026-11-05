@@ -1,0 +1,32 @@
+{
+  "name": "objects-and-tasks",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 4376 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "local:start": "node tests/live/start.mjs",
+    "local:api": "node tests/live/proxy.mjs",
+    "test:live": "node tests/live/integration.mjs",
+    "test:live:browser": "node tests/live/browser.mjs",
+    "test:live:reliability": "node tests/live/reliability.mjs",
+    "test:live:proxy": "node tests/live/proxy-boundary.mjs",
+    "local:preview": "node tests/live/preview.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15",
+    "@playwright/test": "^1.64.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
+  }
+}
